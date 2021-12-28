@@ -5,7 +5,4 @@ using std::vector;
 
 void manipolazionedeipezzidapartedeicobot(const vector<int> &, string);
 
-
-
-
 #endif

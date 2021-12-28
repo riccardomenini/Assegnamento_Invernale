@@ -4,9 +4,14 @@
 #include <vector>
 #include "arrivodeipezzi.h"
 #include "manipolazionedeipezzidapartedeicobot.h"
+#include "globali.h"
 using std::vector;
 using std::thread;
 using std::cout;
+
+mutex mutex_;
+mutex mutexcout_;
+condition_variable not_empty_;
 
 int main(int argc, char* argv[]){
 
@@ -24,17 +29,15 @@ int main(int argc, char* argv[]){
   thread arrivodeipezzi1{arrivodeipezzi, "a"};
 	thread arrivodeipezzi2{arrivodeipezzi, "b"};
 
-  //thread manipolazionedeipezzidapartedeicobot1{manipolazionedeipezzidapartedeicobot, veldis, "a"};
-  //thread manipolazionedeipezzidapartedeicobot2{manipolazionedeipezzidapartedeicobot, veldis, "b"};
+  thread manipolazionedeipezzidapartedeicobot1{manipolazionedeipezzidapartedeicobot, veldis, "a"};
+  thread manipolazionedeipezzidapartedeicobot2{manipolazionedeipezzidapartedeicobot, veldis, "b"};
 
 
 	arrivodeipezzi1.join();
 	arrivodeipezzi2.join();
 
-  thread manipolazionedeipezzidapartedeicobot1{manipolazionedeipezzidapartedeicobot, veldis, "a"};
-
   manipolazionedeipezzidapartedeicobot1.join();
-  //manipolazionedeipezzidapartedeicobot2.join();
+  manipolazionedeipezzidapartedeicobot2.join();
 
 
 	return 0;
