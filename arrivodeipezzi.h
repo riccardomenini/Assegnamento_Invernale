@@ -1,6 +1,6 @@
 #ifndef ARRIVODEIPEZZI
 #define ARRIVODEIPEZZI
-using namespace std;
+using std::string;
 
 void arrivodeipezzi(string);
 

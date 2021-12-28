@@ -4,7 +4,9 @@
 #include <vector>
 #include "arrivodeipezzi.h"
 #include "manipolazionedeipezzidapartedeicobot.h"
-using namespace std;
+using std::vector;
+using std::thread;
+using std::cout;
 
 int main(int argc, char* argv[]){
 

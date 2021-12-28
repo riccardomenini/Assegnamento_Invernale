@@ -2,7 +2,9 @@
 #include <iostream>
 #include <ctime>
 #include <string>
-using namespace std;
+using std::ofstream;
+using std::endl;
+using std::string;
 
 void arrivodeipezzi(string nome){
   ofstream fout("arrivi_linea_"+ nome +".txt");
