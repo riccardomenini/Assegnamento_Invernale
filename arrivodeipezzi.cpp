@@ -16,7 +16,7 @@ void arrivodeipezzi(string nome){
   int mm = 0;
   int ss = 0;
   srand(time(NULL));
-  while (mm != 60){
+  for (int i = 0; i < MAX; i++){
 		int tipo = rand()%3;
     string tipo_pezzo;
     switch (tipo) {
@@ -29,7 +29,6 @@ void arrivodeipezzi(string nome){
       case 2:
         tipo_pezzo = "C";
         break;
-
     }
     int pos = rand()%1000;
     unique_lock<mutex> mlock(mutex_);
@@ -44,4 +43,5 @@ void arrivodeipezzi(string nome){
     }
   }
   fout.close();
+
 }
