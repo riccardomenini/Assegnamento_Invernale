@@ -31,6 +31,7 @@ int fineproduzione = 0;
 vector<vector<string>> tipologie ((ceil(2*MAX/10.) + 1) ,vector<string>(10));
 vector<vector<int>> orario ((ceil(2*MAX/10.) + 1) ,vector<int>(10));
 
+
 int main(int argc, char* argv[]){
 
   if (argc!= 6) {
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]){
   for (int i = 1; i < 5; i++){
     veldis.push_back(atoi(argv[i]));
   }
+  //thread sistemadigracefuldegradation{sistemadigracefuldegradation};
 
   thread arrivodeipezzi1{arrivodeipezzi, "a"};
 	thread arrivodeipezzi2{arrivodeipezzi, "b"};
@@ -65,8 +67,6 @@ int main(int argc, char* argv[]){
   for (int i = 0; i < tipologie.size(); i++){
     cout << "Scatola " << i << endl;
     cout << "Tipologia pezzo \t";
-    int a = 0;
-    int b = 0;
     for (int j = 0; j < 10; j++){
       cout << tipologie[i][j] << "\t";
     }

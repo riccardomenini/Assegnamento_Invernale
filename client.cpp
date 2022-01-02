@@ -21,7 +21,7 @@ using std::to_string;
 using std::cin;
 
 
-const int MAXDATASIZE{100}; // max number of bytes we can get at once
+const int MAXDATASIZE{1000}; // max number of bytes we can get at once
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -29,7 +29,6 @@ void *get_in_addr(struct sockaddr *sa)
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
-
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
@@ -58,8 +57,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	// loop through all the results and connect to the first we can
-	for(p = servinfo; p != NULL; p = p->ai_next) {
+	for(p = servinfo; p != NULL; p = p->ai_next) {// loop through all the results and connect to the first we can
 		if ((sockfd = socket(p->ai_family, p->ai_socktype,
 				p->ai_protocol)) == -1) {
 			cerr << "Failed to create socket:\n";
@@ -93,15 +91,25 @@ int main(int argc, char *argv[])
 
 	buf[numbytes] = '\0';
 
-	cout << "client: received "<< buf << endl;
+	cout << buf <<  endl;
 
 	int richiesta = 0;
 	cout << "Inserire un numero: " << endl;
 	cin >> richiesta;
+	string str = to_string(richiesta);
 
-	if (send(sockfd, "ciao", 5, 0) == -1){
+	if (send(sockfd, str.c_str(), 5, 0) == -1){
     cerr << "send  \n";
   }
+
+	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+	    cerr << "Client failed to receive data\n";
+	    exit(EXIT_FAILURE);
+	}
+
+	buf[numbytes] = '\0';
+
+	cout << buf << endl;
 
 	close(sockfd);
 

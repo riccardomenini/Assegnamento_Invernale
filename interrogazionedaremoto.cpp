@@ -12,11 +12,13 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include "globali.h"
 using std::thread;
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::vector;
+using std::to_string;
 
 const int MAXDATASIZE{100}; // max number of bytes we can get at once
 
@@ -33,9 +35,33 @@ void new_connection (int sock) {
       exit(EXIT_FAILURE);
   }
 
-  buf[numbytes] = '\0';
+  int n = atoi(buf);
 
-  cout << "server: received "<< buf << endl;
+  if (n >= tipologie.size()) {
+      cerr << "Questa scatola non esiste in magazzino\n";
+      exit(EXIT_FAILURE);
+  }
+
+  cout << "server: ricevuta richiesta per scatola "<< atoi(buf) << endl;
+
+  string dati = "";
+
+  dati += "Scatola " + to_string(n) + "\n";
+  dati += "Tipologia pezzo \t";
+  for (int j = 0; j < 10; j++){
+    dati += tipologie[n][j] + "\t";
+  }
+  dati += "\n" ;
+  dati += "Orario \t\t\t";
+  for (int j = 0; j < 10; j++){
+    dati += to_string(orario[n][j]) + "\t";
+  }
+  dati += "\n";
+
+
+  if (send(sock, dati.c_str(), 250, 0) == -1){
+    cerr << "send  \n";
+  }
 
   close(sock);
 }
@@ -119,8 +145,7 @@ void accept_loop (const char* port) {
     while(true) {
 
 
-    	// This listen() call tells the socekt to listen to the incoming
-			// connections.
+    	// This listen() call tells the socekt to listen to the incoming connections.
 	    // The listen() function places all incoming connection into a backlog
 			// queue until accept() call accepts the connection
   	  // Here we set the maximum size for the backlog queue to 10.
