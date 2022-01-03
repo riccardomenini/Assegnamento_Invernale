@@ -20,55 +20,61 @@ using std::endl;
 using std::vector;
 using std::to_string;
 
-const int MAXDATASIZE{100}; // max number of bytes we can get at once
+const int MAXDATASIZE{100}; //numero massimo di byte che possono essere scambiati
 
-void new_connection (int sock) {
-  if (send(sock, "Di quale scatola si vogliono sapere le informazioni?", 52, 0) == -1){
-    cerr << "send  \n";
+void new_connection (int sock){
+
+  if (send(sock, "Di quale scatola si vogliono sapere le informazioni?", 52, 0) == -1){ //il server chiede al client il numero della scatola
+    cerr << "send  \n"; //se la send fallisce da errore
   }
 
-  char buf[MAXDATASIZE];
-  int numbytes;
+  char buf[MAXDATASIZE];  //conterrà il messaggio ricevuto
+  int numbytes; //dimensione messaggio ricevuto
 
-  if ((numbytes = recv(sock, buf, MAXDATASIZE-1, 0)) == -1) {
-      cerr << "Server failed to receive data\n";
-      exit(EXIT_FAILURE);
+  if ((numbytes = recv(sock, buf, MAXDATASIZE-1, 0)) == -1) { //riceve il messaggio contenente il numero della scatola dal client
+      cerr << "Server failed to receive data\n";  //se fallisce la ricezione da errore
+      exit(EXIT_FAILURE); //esce dal programma
   }
 
-  int n = atoi(buf);
-
-  if (n >= tipologie.size()) {
-      cerr << "Questa scatola non esiste in magazzino\n";
-      exit(EXIT_FAILURE);
-  }
-
-  cout << "server: ricevuta richiesta per scatola "<< atoi(buf) << endl;
+  int n = atoi(buf);  //trasformo il messaggio in un intero
 
   string dati = "";
 
-  dati += "Scatola " + to_string(n) + "\n";
-  dati += "Tipologia pezzo \t";
-  for (int j = 0; j < 10; j++){
-    dati += tipologie[n][j] + "\t";
-  }
-  dati += "\n" ;
-  dati += "Orario \t\t\t";
-  for (int j = 0; j < 10; j++){
-    dati += to_string(orario[n][j]) + "\t";
-  }
-  dati += "\n";
+  if (n >= num) { //controllo che la scatola sia già in magazzino
 
+      cerr << "Questa scatola non esiste in magazzino\n";
+      dati = "Questa scatola non esiste in magazzino\n";
 
-  if (send(sock, dati.c_str(), 250, 0) == -1){
-    cerr << "send  \n";
+  }else{
+
+    cout << "server: ricevuta richiesta per scatola "<< atoi(buf) << endl; //stampo dal server la richiesta ricevuta
+
+    dati = "";
+
+    dati += "Scatola " + to_string(n) + "\n"; //ricerco in magazzino le informazioni sulla richiesta ricevuta e constuisco la stringa per il client
+    dati += "Tipologia pezzo \t";
+    for (int j = 0; j < 10; j++){
+      dati += tipologie[n][j] + "\t";
+    }
+    dati += "\n" ;
+    dati += "Orario \t\t\t";
+    for (int j = 0; j < 10; j++){
+      dati += to_string(orario[n][j]) + "\t";
+    }
+    dati += "\n";
+
   }
 
-  close(sock);
+  if (send(sock, dati.c_str(), 250, 0) == -1){  //mando la stringa creata al client
+    cerr << "send  \n"; //se fallisce l'invio da errore
+  }
+
+  close(sock);  //Chiude la socket
 }
 
 
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
+
+void *get_in_addr(struct sockaddr *sa)  // ottiene sockaddr, IPv4 o IPv6:
 {
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
@@ -79,8 +85,8 @@ void *get_in_addr(struct sockaddr *sa)
 
 int make_accept_sock (const char* port) {
 
-    struct addrinfo hints;
-    memset(&hints, 0, sizeof(hints) );
+    struct addrinfo hints;  //struttura con le informazioni
+    memset(&hints, 0, sizeof(hints) );  //riempie la struttura con le informazioni
     hints.ai_family   = AF_UNSPEC; // PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags    = AI_PASSIVE; // use my IP
@@ -94,30 +100,25 @@ int make_accept_sock (const char* port) {
 
     struct addrinfo  *p;
     int sockfd; int yes{1};
-    // loop through all the results and bind to the first we can
-		for(p = servinfo; p != NULL; p = p->ai_next) {
 
-        // create a socket
-        // socket(int domain, int type, int protocol)
-			if ((sockfd = socket(p->ai_family, p->ai_socktype,
-				p->ai_protocol)) == -1) {
+		for(p = servinfo; p != NULL; p = p->ai_next) {//cicla su tutti i risultati e tiene il primo con cui si può fari il bind
+
+
+			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {// crea la socket -> socket(int domain, int type, int protocol)
 				cerr << "server: failed to create socket\n";
 				continue;
 			}
 
-			if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
-				sizeof(int)) == -1) {
+			if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int)) == -1) {//
 				cerr << "server: failed setsockopt\n";
 				exit(EXIT_FAILURE);
 			}
 
-      // bind(int fd, struct sockaddr *local_addr, socklen_t addr_length)
-      // bind() passes file descriptor, the address structure,
-      // and the length of the address structure
-      // This bind() call will bind the socket to the current IP address
-      // on port
-			if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
+
+			if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {// bind(int fd, struct sockaddr *local_addr, socklen_t addr_length)
+                                                          // passa il file descriptor, la struttura degli indirizzi creata e la sua linghezza, lega
+                                                          // la socket all'indirizzo IP della porta
+        close(sockfd);//se fallisce chiude la socket
 				cerr << "server: failed bind\n";
 				continue;
 			}
@@ -125,49 +126,44 @@ int make_accept_sock (const char* port) {
 			break;
 		}
 
-		if (p == NULL)  {
+		if (p == NULL)  { //se alla fine del ciclo non è riuscito a fare la socket da errore
 			cerr << "server: failed to bind\n";
 			exit(EXIT_FAILURE);
 		}
 
-		freeaddrinfo(servinfo); // all done with this structure
+		freeaddrinfo(servinfo); //libera la struttura
 
-
-  	return sockfd;
+  	return sockfd; //ritorna "l'id" della socket
 
 }
 
 
 void accept_loop (const char* port) {
-    // create the accept socket
-    int sock = make_accept_sock(port);
+
+    int sock = make_accept_sock(port);  //salva l'indirizzo della socket creata
+    numerosocket = sock;  //salvo l'id per chiuderla con il ctrl c
+    socketaperta = true;  //la socket è aperta
 
     while(true) {
 
-
-    	// This listen() call tells the socekt to listen to the incoming connections.
-	    // The listen() function places all incoming connection into a backlog
-			// queue until accept() call accepts the connection
-  	  // Here we set the maximum size for the backlog queue to 10.
-
-    	const int BACKLOG{10};	 // how many pending connections queue will hold
-			if (listen(sock, BACKLOG) == -1) {
-				cerr << "server: failed to listen\n";
+    	const int BACKLOG{10};	 // quante connessioni posso avere in coda
+			if (listen(sock, BACKLOG) == -1) {  //listen() dice alla socket di "ascoltare" i tentativi di connessione che arrivano e le mette in una
+                                          //backlog queue fino a che accept() accetta la connessione
+				cerr << "server: failed to listen\n"; //se fallisce da erroe
 	    	exit(EXIT_FAILURE);
 			}
-      // the accept() call actually accepts an incoming connection
-      // This accept() function will write the connecting client's address info
-      // into the the address structure and the size of that structure is clilen.
-      // The accept() returns a new socket file descriptor for the accepted connection.
-      // So, the original socket file descriptor can continue to be used
-      // for accepting new connections while the new socker file descriptor is used for
-      // communicating with the connected client.
-      int new_sock = accept(sock, 0, 0);
-      if (new_sock < 0) {
+
+      int new_sock = accept(sock, 0, 0);  //accetta una connessione arrivata e scrive le informazioni del cliente che si sta connettendo nella
+                                          //struttura e aggiorna la dimensione della struttura. Questa funzione ritorna un file descriptor per
+                                          //la connessione che è stata accettata in modo che il file descriptor originale possa essere ancora usato
+                                          //per accettare nuove connessioni mentre quello nuovo possa essere usato per comunicare con il client
+
+      if (new_sock < 0) { //se la socket non viene creata da errore
           cerr << "server: failed on accept\n";
           exit(EXIT_FAILURE);
       }
-      std::thread t(new_connection, new_sock);
-      t.detach();
+      std::thread t(new_connection, new_sock); // fa partire una nuova thread per la nuova connessione con il cliente mentre mantiene quella vecchia
+                                               // per le nuove connessioni. Con un solo client non serve ma qui si suppone di avere più client
+      t.detach(); // scollega le due thread
     }
 }

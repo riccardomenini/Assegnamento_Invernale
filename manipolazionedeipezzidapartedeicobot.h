@@ -1,5 +1,6 @@
 #ifndef MANIPOLAZIONEDEIPEZZIDAPARTEDEICOBOT
 #define MANIPOLAZIONEDEIPEZZIDAPARTEDEICOBOT
+
 using std::string;
 using std::vector;
 
