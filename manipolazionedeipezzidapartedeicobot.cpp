@@ -30,11 +30,11 @@ void leggifile(string nome, vector<string> & lines){	//funzione di lettura file.
 	}
 
 	lines = {};
-	//unique_lock<mutex> mlockletturafile(mutexletturafile_);	//!!!!!!!!!!!!SERVEEEE????
+	unique_lock<mutex> mlockfout(mutexfout_);  	//!!!!!!!!!!!!SERVEEEE????
 	while (getline (myfile, a_line)){
 		lines.push_back(a_line);	//lettura riga per riga
 	}
-	//mlockletturafile.unlock();
+	mlockfout.unlock();
 
 	myfile.close();	//chiusura file
 
@@ -87,49 +87,38 @@ void manipolazionedeipezzidapartedeicobot(const vector<int> & veldis, string nom
 
 			sleep_for(milliseconds{20});	//azione cobot 10ms + i pezzi sono distanti 10ms in quanto venivano creati dalla thread arrivo dei pezzi ogni 10ms
 
-			unique_lock<mutex> mlockinserimentopezzi(mutexinserimentopezzi_);
-			//unique_lock<mutex> mlockpezziinnum(mutexpezziinnum_);	//modifico una variabile globale quindi proteggo con un semaforo
+			unique_lock<mutex> mlockinserimentopezzi(mutexinserimentopezzi_); //modifico delle variabili globali quindi proteggo con un semaforo
 			pezziinnum ++;	//il pezzo viene inserito nella scatola
-			//mlockpezziinnum.unlock();
 
-			//unique_lock<mutex> mlockcout(mutexcout_);	//il cout non è thread safe e quindi viene protetto
+			unique_lock<mutex> mlockcout(mutexcout_); //il cout non è thread safe e quindi viene protetto
 			cout << "Cobot linea di trasporto " << nome << ": recuperato componente di tipo " << lines[i][found1] << " al tempo " << mm << " " << ss << " in posizione " << pos << " e inserito nella scatola " << num << '\n';
-			//mlockcout.unlock();
+			mlockcout.unlock();
+
 			lineelette = lines.size();	//il valore di lee lette viene incrementato quando il cobot agisce su quei pezzi
 
-			//unique_lock<mutex> mlockmagazzino(mutexmagazzino_);	//modifico una variabile globale quindi proteggo con un semaforo
 			tipologie[num][pezziinnum - 1] = lines[i][found1];	//aggiorno il magazzino con il contenuto della scatola. Viene fatto qui e non dopo il
 			orario[num][pezziinnum - 1] = mm * 60 + ss;					//trasporto in magzzino da parte dei cobot perchè solo qui ho le informazioni su cosa contiene
-			//mlockmagazzino.unlock();
 
-			cout << "pezzi in num" << pezziinnum << endl;
 			if (pezziinnum > 9){	//se è maggiore di 9 cambio scatola
 
-				cout << "sono in if" << endl;
-				//unique_lock<mutex> mlockpostazioneoccupata(mutexpostazioneoccupata_);	//modifico una variabile globale quindi proteggo con un semaforo
-				postazioneoccupata = true;	//la postazione è occupata da una scatola piena
-				//mlockpostazioneoccupata.unlock();
+				unique_lock<mutex> mlockpostazioneoccupata(mutexpostazioneoccupata_);	//semaforo per wait sotto. Inoltre protegge la modifica di
+																																							//postazioneoccupata rispetto al robot mentre mlockinserimentopezzi
+																																							//rispetto all'altro cobot
 
+				postazioneoccupata = true;	//la postazione è occupata da una scatola piena
 				postazioneoccupata_.notify_one();	//segnalo ai cobot che la postazione è occupata da una scatola piena
 
-				//mlockpostazioneoccupata.lock();//modifico una variabile globale quindi proteggo con un semaforo
-				unique_lock<mutex> mlockpostazioneoccupata(mutexpostazioneoccupata_);
 				while (postazioneoccupata){ //Uso while per risvegli spuri. Rimango bloccato fino a quando i robot trasportatori non liberano la postazione
 					postazioneoccupata_.wait(mlockpostazioneoccupata);	//se la postazione è occupata da una scatola piena mi blocco
+																															//non si dovrebbe fare la wait in sezione critica (data da inserimento pezzi)
+																															//ma in questo caso ha senso perchè se una linea non può proseguire, neanche l'altra
+																															//linea può farlo in quanto la postazione è piena e quindi entrambe devono aspettare
 				}
-				//mlockpostazioneoccupata.unlock();
+				mlockpostazioneoccupata.unlock();
 
-				//mlockpezziinnum.lock();	//modifico una variabile globale quindi proteggo con un semaforo
 				pezziinnum = pezziinnum % 10; //nella scatola nuova ci sono 0 pezzi
-				//mlockpezziinnum.unlock();
-
-				//unique_lock<mutex> mlocknum(mutexnum_);	//modifico una variabile globale quindi proteggo con un semaforo
 				num ++;	//La postazione è libera quindi posso mettere una scatola nuova
-				//mlocknum.unlock();
 
-				//unique_lock<mutex> mlockcout(mutexcout_);	//il cout non è thread safe e quindi viene protetto
-				cout << "thread " << nome << ":" << num <<endl;
-				//mlockcout.unlock();
 				mlockinserimentopezzi.unlock();
 			}
 		}
@@ -138,14 +127,13 @@ void manipolazionedeipezzidapartedeicobot(const vector<int> & veldis, string nom
 
 	unique_lock<mutex> mlockfineproduzione(mutexfineproduzione_);	//modifico una variabile globale quindi proteggo con un semaforo
 	fineproduzione ++;	//Questa linea ha finito la produzione
-	mlockfineproduzione.unlock();
 
 	if (fineproduzione == 2){//Se entrambe le linee hanno finito la produzione posso sbloccare i robot e tirare via la scatola anche se non è piena
 
-		unique_lock<mutex> mlockpostazioneoccupata(mutexpostazioneoccupata_);	//modifico una variabile globale quindi proteggo con un semaforo
 		postazioneoccupata = true;	//tiro via la scatola anche se non è piena
-		mlockpostazioneoccupata.unlock();
-
 		postazioneoccupata_.notify_all(); //la condizione postazione occupata è variata
+
 	}
+
+	mlockfineproduzione.unlock();
 }

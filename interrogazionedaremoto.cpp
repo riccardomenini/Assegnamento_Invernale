@@ -19,6 +19,7 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::to_string;
+using std::unique_lock;
 
 const int MAXDATASIZE{100}; //numero massimo di byte che possono essere scambiati
 
@@ -47,7 +48,9 @@ void new_connection (int sock){
 
   }else{
 
+    unique_lock<mutex> mlockcout(mutexcout_); //il cout non è thread safe e quindi viene protetto
     cout << "server: ricevuta richiesta per scatola "<< atoi(buf) << endl; //stampo dal server la richiesta ricevuta
+    mlockcout.unlock();
 
     dati = "";
 

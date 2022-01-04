@@ -19,7 +19,7 @@ using std::endl;
 using std::unique_lock;
 
 void signal_handler(int signal){
-  
+
   unique_lock<mutex> mlockcout(mutexcout_); //il cout non è thread safe e quindi viene protetto
   cout << "Spegnimento impianto..." << endl;
   mlockcout.unlock();

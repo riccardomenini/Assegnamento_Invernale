@@ -15,13 +15,9 @@ using std::endl;
 
 mutex mutexfout_;
 mutex mutexcout_;
-mutex mutexletturafile_;
-mutex mutexpezziinnum_;
-mutex mutexnum_;
-mutex mutexrobot_;
 mutex mutexpostazioneoccupata_;
 mutex mutexfineproduzione_;
-mutex mutexmagazzino_;
+mutex mutexinserimentopezzi_;
 condition_variable not_empty_;
 condition_variable postazioneoccupata_;
 int num = 0;
