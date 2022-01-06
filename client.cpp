@@ -20,12 +20,9 @@ using std::string;
 using std::to_string;
 using std::cin;
 
-
 const int MAXDATASIZE{1000}; // max number of bytes we can get at once
 
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
+void *get_in_addr(struct sockaddr *sa){ // ottiene sockaddr, IPv4 o IPv6:
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
@@ -35,20 +32,19 @@ void *get_in_addr(struct sockaddr *sa)
 int main(int argc, char *argv[])
 {
 
-	if (argc != 3) {
+	if (argc != 3) {	//controlla di avere tutti i parametri altrimenti da errore
 	    cerr << "usage: ./client hostname port\n";
 	    exit(EXIT_FAILURE);
 	}
 
-
 	int sockfd, numbytes;
-	char buf[MAXDATASIZE];
-	struct addrinfo hints, *servinfo, *p;
+	char buf[MAXDATASIZE];	//per memorizzare i dati ricevuti dal server
+	struct addrinfo hints, *servinfo, *p;	//strutture per la connessione
 	int rv;
 	char s[INET6_ADDRSTRLEN];
 
 
-	memset(&hints, 0, sizeof(hints));
+	memset(&hints, 0, sizeof(hints));	//riempie la struttura con le informazioni
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
@@ -57,61 +53,60 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	for(p = servinfo; p != NULL; p = p->ai_next) {// loop through all the results and connect to the first we can
-		if ((sockfd = socket(p->ai_family, p->ai_socktype,
-				p->ai_protocol)) == -1) {
-			cerr << "Failed to create socket:\n";
+	for(p = servinfo; p != NULL; p = p->ai_next) {	//cicla su tutti i risultati e tiene il primo con cui si può fari il bind
+
+		if ((sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol)) == -1) {	// crea la socket -> socket(int domain, int type, int protocol)
+			cerr << "Failed to create socket:\n";	//da errore se fallisce
 			continue;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			cerr << "Failed to connect to socket...";
+		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {	//si connette alla porta del server
+			close(sockfd);	//chiude la socket se fallisce
+			cerr << "Failed to connect to socket..."; //da errore se fallisce
 			continue;
 		}
 
 		break;
 	}
 
-	if (p == NULL) {
+	if (p == NULL) {	//se alla fine del ciclo non è riuscito a fare la socket da errore
 		cerr <<  "client: failed to connect\n";
 		exit(EXIT_FAILURE);
 	}
 
-	inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
-			s, sizeof(s));
+	inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),s, sizeof(s));
 	cout << "client: connecting to " << s << endl;
 
-	freeaddrinfo(servinfo); // all done with this structure
+	freeaddrinfo(servinfo); //libera la struttura
 
-	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    cerr << "Client failed to receive data\n";
+	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {	//riceve la domanda della scatola da parte del server
+	    cerr << "Client failed to receive data\n";	//se fallisce da errore
 	    exit(EXIT_FAILURE);
 	}
 
 	buf[numbytes] = '\0';
 
-	cout << buf <<  endl;
+	cout << buf <<  endl;	//stampa la domanda ricevuta dal server
 
 	int richiesta = 0;
-	cout << "Inserire un numero: " << endl;
+	cout << "Inserire un numero: " << endl;	//input per la scatola di cui si vogliono le informazioni
 	cin >> richiesta;
-	string str = to_string(richiesta);
+	string str = to_string(richiesta);	//trasforma int in stringa
 
-	if (send(sockfd, str.c_str(), 5, 0) == -1){
-    cerr << "send  \n";
+	if (send(sockfd, str.c_str(), 5, 0) == -1){	//manda il numero della scatola al server
+    cerr << "send  \n";	//se fallisce da errore
   }
 
-	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    cerr << "Client failed to receive data\n";
+	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {	//riceve la stringa con le informazioni sulla scatola da parte del server
+	    cerr << "Client failed to receive data\n";	//se fallisce da errore
 	    exit(EXIT_FAILURE);
 	}
 
 	buf[numbytes] = '\0';
 
-	cout << buf << endl;
+	cout << buf << endl;	//stampa la stringa con le informazioni
 
-	close(sockfd);
+	close(sockfd);	//chiude la socket
 
 	return 0;
 }

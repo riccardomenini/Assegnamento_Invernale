@@ -30,11 +30,10 @@ void leggifile(string nome, vector<string> & lines){	//funzione di lettura file.
 	}
 
 	lines = {};
-	unique_lock<mutex> mlockfout(mutexfout_);  	//!!!!!!!!!!!!SERVEEEE????
+
 	while (getline (myfile, a_line)){
 		lines.push_back(a_line);	//lettura riga per riga
 	}
-	mlockfout.unlock();
 
 	myfile.close();	//chiusura file
 
@@ -55,8 +54,10 @@ void manipolazionedeipezzidapartedeicobot(const vector<int> & veldis, string nom
 	while(lineelette < MAX && stato){	//controllo di non aver letto MAX linee (quindi quelle massime che possono essere scritte) e che il sitema
 																		//non sia spento
 
+		unique_lock<mutex> mlockfout(mutexfout_);	//è il semaforo che serve per il wait sotto inoltre insieme al semaforo presente in arrivo dei pezzi
+																							//permette solo la scrittura o la lettura del file e mai la contemporaneità delle due
 		leggifile(nome,lines);	//lettura
-		unique_lock<mutex> mlockfout(mutexfout_);	//è il semaforo che serve per il wait sotto
+
   	while (lines.size() == lineelette){	//mi fermo se ho letto tutte le linee che sono scritte nel file. Uso while per risvegli spuri
 			not_empty_.wait(mlockfout);	//se ho già letto tutte le linee mi fermo
 			leggifile(nome,lines);	//appena vengo risvegliato rileggo tutto
@@ -94,7 +95,7 @@ void manipolazionedeipezzidapartedeicobot(const vector<int> & veldis, string nom
 			cout << "Cobot linea di trasporto " << nome << ": recuperato componente di tipo " << lines[i][found1] << " al tempo " << mm << " " << ss << " in posizione " << pos << " e inserito nella scatola " << num << '\n';
 			mlockcout.unlock();
 
-			lineelette = lines.size();	//il valore di lee lette viene incrementato quando il cobot agisce su quei pezzi
+			lineelette = lines.size();	//il valore di linee lette viene incrementato quando il cobot agisce su quei pezzi
 
 			tipologie[num][pezziinnum - 1] = lines[i][found1];	//aggiorno il magazzino con il contenuto della scatola. Viene fatto qui e non dopo il
 			orario[num][pezziinnum - 1] = mm * 60 + ss;					//trasporto in magzzino da parte dei cobot perchè solo qui ho le informazioni su cosa contiene
@@ -110,9 +111,13 @@ void manipolazionedeipezzidapartedeicobot(const vector<int> & veldis, string nom
 
 				while (postazioneoccupata){ //Uso while per risvegli spuri. Rimango bloccato fino a quando i robot trasportatori non liberano la postazione
 					postazioneoccupata_.wait(mlockpostazioneoccupata);	//se la postazione è occupata da una scatola piena mi blocco
-																															//non si dovrebbe fare la wait in sezione critica (data da inserimento pezzi)
+																															//non si dovrebbe fare la wait in sezione critica (data da inserimentopezzi)
 																															//ma in questo caso ha senso perchè se una linea non può proseguire, neanche l'altra
-																															//linea può farlo in quanto la postazione è piena e quindi entrambe devono aspettare
+																															//linea può farlo in quanto la postazione è piena e quindi entrambe devono aspettare.
+																															//Viene usato un mutex diverso da mutexinserimentopezzi_ in quanto se fosse stato
+																															//utilizzato quello quando la wait si attivava sbloccava tale mutex e l'altro cobot che
+																															//era fermo prima dell'istruzione "pezziinnum ++;" proseguiva immettendo oggetti nelle
+																															//scatole già piene.
 				}
 				mlockpostazioneoccupata.unlock();
 

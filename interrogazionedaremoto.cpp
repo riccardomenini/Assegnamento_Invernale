@@ -41,7 +41,7 @@ void new_connection (int sock){
 
   string dati = "";
 
-  if (n >= num) { //controllo che la scatola sia già in magazzino
+  if (n > num) { //controllo che la scatola sia già in magazzino
 
       cerr << "Questa scatola non esiste in magazzino\n";
       dati = "Questa scatola non esiste in magazzino\n";
@@ -62,7 +62,7 @@ void new_connection (int sock){
     dati += "\n" ;
     dati += "Orario \t\t\t";
     for (int j = 0; j < 10; j++){
-      dati += to_string(orario[n][j]) + "\t";
+      dati += to_string(orario[n][j]/60) + " " + to_string(orario[n][j]%60) + "\t";
     }
     dati += "\n";
 
